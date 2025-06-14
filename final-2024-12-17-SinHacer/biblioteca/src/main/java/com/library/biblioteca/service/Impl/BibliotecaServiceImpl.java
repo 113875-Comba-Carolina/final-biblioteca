@@ -54,6 +54,17 @@ public class BibliotecaServiceImpl implements BibliotecaService {
          * actualizar el estado de los libros a DISPONIBLE
          * y guardar el registro con los datos actualizados 
          */
+        Registro registro = registroRepository.findById(registroId).orElseThrow();
+        LocalDate fin = LocalDate.now();
+        int cantidadLibros = registro.getLibrosReservados().size();
+        BigDecimal importe = calcularCostoAlquiler(registro.getFechaReserva(), fin, cantidadLibros);
+        registro.setFechaDevolucion(fin);
+        registro.setTotal(importe);
+        for (Libro libro : registro.getLibrosReservados()) {
+            libro.setEstado(EstadoLibro.DISPONIBLE);
+            libroRepository.save(libro);
+        }
+        return registroRepository.save(registro);
 
     }
 
@@ -72,7 +83,18 @@ public class BibliotecaServiceImpl implements BibliotecaService {
          * hasta 2 dias se debe pagar $100 por libro
          * desde 3 dias y hasta 5 dias se debe pagar $150 por libro
          * más de 5 dias se debe pagar $150 por libro + $30 por cada día extra
-         */        
+         */
+        BigDecimal importe;
+        long dias = ChronoUnit.DAYS.between(inicio, fin);
+        if (dias <= 2) {
+            importe = new BigDecimal(100).multiply(new BigDecimal(cantidadLibros));
+        } else if (dias <= 5) {
+            importe = new BigDecimal(150).multiply(new BigDecimal(cantidadLibros));
+        } else {
+            importe = new BigDecimal(150).multiply(new BigDecimal(cantidadLibros));
+            importe = importe.add(new BigDecimal(dias - 5).multiply(new BigDecimal(30)));
+        }
+        return importe;
         
     }
 
@@ -83,7 +105,9 @@ public class BibliotecaServiceImpl implements BibliotecaService {
          * Completar el metodo de reporte semanal
          * se debe retornar la lista de registros de la semana tomando como referencia
          * la fecha de inicio para la busqueda
-         */ 
+         */
+        List<Registro> registros = new ArrayList<>();
+
 
     }
 
